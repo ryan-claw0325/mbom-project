@@ -1,75 +1,46 @@
 import { useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Layout as AntLayout, Menu, Typography, theme } from 'antd';
-import {
-  HomeOutlined,
-  UploadOutlined,
-  CheckCircleOutlined,
-  ApiOutlined,
-} from '@ant-design/icons';
+import { Typography } from 'antd';
+import '../styles/enterprise.css';
 
-const { Header, Content } = AntLayout;
 const { Title } = Typography;
+
+const menuItems = [
+  { key: '/boms', icon: '🏠', label: 'BOM 管理' },
+  { key: '/import', icon: '📤', label: 'EBOM 导入' },
+  { key: '/validation', icon: '✅', label: '数据校验' },
+  { key: '/process', icon: '🔗', label: '工艺关联' },
+];
 
 const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [collapsed, setCollapsed] = useState(false);
-  const {
-    token: { colorBgContainer, borderRadiusLG },
-  } = theme.useToken();
-
-  const menuItems = [
-    {
-      key: '/boms',
-      icon: <HomeOutlined />,
-      label: 'BOM 管理',
-    },
-    {
-      key: '/import',
-      icon: <UploadOutlined />,
-      label: 'EBOM 导入',
-    },
-    {
-      key: '/validation',
-      icon: <CheckCircleOutlined />,
-      label: '数据校验',
-    },
-    {
-      key: '/process',
-      icon: <ApiOutlined />,
-      label: '工艺关联',
-    },
-  ];
+  const currentPath = '/' + (location.pathname.split('/')[1] || 'boms');
 
   return (
-    <AntLayout style={{ minHeight: '100vh' }}>
-      <Header style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
-        <Title level={4} style={{ color: 'white', margin: 0 }}>
-          🔧 MBOM 管理模块
-        </Title>
-        <Menu
-          theme="dark"
-          mode="horizontal"
-          selectedKeys={[location.pathname.split('/')[1] || '/boms']}
-          items={menuItems}
-          onClick={({ key }) => navigate(key)}
-          style={{ flex: 1, minWidth: 0 }}
-        />
-      </Header>
-      <Content style={{ padding: '24px' }}>
-        <div
-          style={{
-            background: colorBgContainer,
-            borderRadius: borderRadiusLG,
-            minHeight: 'calc(100vh - 112px)',
-            padding: 24,
-          }}
-        >
-          <Outlet />
+    <div className="layout">
+      <aside className="sidebar">
+        <div className="sidebar-logo">
+          <Title level={4} style={{ color: 'white', margin: 0 }}>🔧 MBOM</Title>
+          <span>管理模块</span>
         </div>
-      </Content>
-    </AntLayout>
+        <ul className="sidebar-nav">
+          {menuItems.map((item) => (
+            <li
+              key={item.key}
+              className={currentPath === item.key ? 'active' : ''}
+              onClick={() => navigate(item.key)}
+            >
+              <span className="icon">{item.icon}</span>
+              <span>{item.label}</span>
+            </li>
+          ))}
+        </ul>
+      </aside>
+      <main className="main">
+        <Outlet />
+      </main>
+    </div>
   );
 };
 

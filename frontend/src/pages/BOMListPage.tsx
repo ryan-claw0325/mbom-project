@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Card, Button, Input, Space, Tag, Modal, Form, Select, message } from 'antd';
-import { PlusOutlined, SearchOutlined, EyeOutlined, EditOutlined, DeleteOutlined, CopyOutlined } from '@ant-design/icons';
+import { Button, Input, Space, Tag, Modal, Form, Select, message, Table, Card } from 'antd';
+import { PlusOutlined, SearchOutlined, EyeOutlined, CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { api } from '../api/client';
 
@@ -91,7 +91,7 @@ const BOMListPage = () => {
       title: 'BOM 编码',
       dataIndex: 'bomCode',
       width: 180,
-      render: (code) => <Tag>{code}</Tag>,
+      render: (code) => <Tag color="blue">{code}</Tag>,
     },
     {
       title: 'BOM 名称',
@@ -134,11 +134,12 @@ const BOMListPage = () => {
     },
     {
       title: '操作',
-      width: 180,
+      width: 200,
       render: (_, record) => (
         <Space>
           <Button
             type="link"
+            size="small"
             icon={<EyeOutlined />}
             onClick={() => navigate(`/boms/${record.id}`)}
           >
@@ -146,6 +147,7 @@ const BOMListPage = () => {
           </Button>
           <Button
             type="link"
+            size="small"
             icon={<CopyOutlined />}
             onClick={() => {
               api.duplicateBom(record.id, {
@@ -161,6 +163,7 @@ const BOMListPage = () => {
           </Button>
           <Button
             type="link"
+            size="small"
             danger
             icon={<DeleteOutlined />}
             onClick={() => handleDelete(record.id)}
@@ -173,75 +176,89 @@ const BOMListPage = () => {
   ];
 
   return (
-    <Card
-      title="BOM 列表"
-      extra={
-        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>
-          新建 BOM
-        </Button>
-      }
-    >
-      <Space style={{ marginBottom: 16 }} wrap>
-        <Input.Search
-          placeholder="搜索 BOM 编码或名称"
-          allowClear
-          enterButton={<SearchOutlined />}
-          style={{ width: 300 }}
-          onSearch={(value) => {
-            setSearchKeyword(value);
-            setPagination((prev) => ({ ...prev, current: 1 }));
+    <>
+      <header className="header">
+        <div className="header-title">BOM 管理</div>
+        <div className="header-actions">
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>
+            新建 BOM
+          </Button>
+        </div>
+      </header>
+      <div className="content">
+        <div className="page-header">
+          <h2 className="page-title">BOM 列表</h2>
+          <p className="page-desc">管理所有制造BOM，支持创建、编辑、复制和删除操作</p>
+        </div>
+
+        <div className="card">
+          <div className="card-body">
+            <div className="filter-bar">
+              <div className="filter-item">
+                <Input.Search
+                  placeholder="搜索 BOM 编码或名称"
+                  allowClear
+                  enterButton={<SearchOutlined />}
+                  style={{ width: 300 }}
+                  onSearch={(value) => {
+                    setSearchKeyword(value);
+                    setPagination((prev) => ({ ...prev, current: 1 }));
+                  }}
+                />
+              </div>
+            </div>
+
+            <Table
+              columns={columns}
+              dataSource={boms}
+              rowKey="id"
+              loading={loading}
+              pagination={{
+                current: pagination.current,
+                pageSize: pagination.pageSize,
+                total: pagination.total,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `共 ${total} 条`,
+                onChange: (page, pageSize) => setPagination({ current: page, pageSize, total: pagination.total }),
+              }}
+            />
+          </div>
+        </div>
+
+        <Modal
+          title="新建 BOM"
+          open={createModalOpen}
+          onCancel={() => {
+            setCreateModalOpen(false);
+            form.resetFields();
           }}
-        />
-      </Space>
-
-      <Table
-        columns={columns}
-        dataSource={boms}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: pagination.current,
-          pageSize: pagination.pageSize,
-          total: pagination.total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-          onChange: (page, pageSize) => setPagination({ current: page, pageSize, total: pagination.total }),
-        }}
-      />
-
-      <Modal
-        title="新建 BOM"
-        open={createModalOpen}
-        onCancel={() => {
-          setCreateModalOpen(false);
-          form.resetFields();
-        }}
-        onOk={() => form.submit()}
-      >
-        <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item name="bomCode" label="BOM 编码" rules={[{ required: true }]}>
-            <Input placeholder="如 MBOM-2026-0001" />
-          </Form.Item>
-          <Form.Item name="bomName" label="BOM 名称" rules={[{ required: true }]}>
-            <Input placeholder="如 发动机总成 MBOM" />
-          </Form.Item>
-          <Form.Item name="bomType" label="BOM 类型" initialValue="MBOM">
-            <Select>
-              <Select.Option value="MBOM">MBOM</Select.Option>
-              <Select.Option value="EBOM">EBOM</Select.Option>
-              <Select.Option value="PBOM">PBOM</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="productModel" label="产品型号">
-            <Input placeholder="如 型号A" />
-          </Form.Item>
-          <Form.Item name="createdBy" label="创建人">
-            <Input placeholder="创建人姓名" />
-          </Form.Item>
-        </Form>
-      </Modal>
-    </Card>
+          onOk={() => form.submit()}
+        >
+          <Form form={form} layout="vertical" onFinish={handleCreate}>
+            <Form.Item name="bomCode" label="BOM 编码" rules={[{ required: true }]}>
+              <Input placeholder="如 MBOM-2026-0001" />
+            </Form.Item>
+            <Form.Item name="bomName" label="BOM 名称" rules={[{ required: true }]}>
+              <Input placeholder="如 发动机总成 MBOM" />
+            </Form.Item>
+            <Form.Item name="bomType" label="BOM 类型" initialValue="MBOM">
+              <Select>
+                <Select.Option value="MBOM">MBOM</Select.Option>
+                <Select.Option value="EBOM">EBOM</Select.Option>
+                <Select.Option value="PBOM">PBOM</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="productModel" label="产品型号">
+              <Input placeholder="如 型号A" />
+            </Form.Item>
+            <Form.Item name="createdBy" label="创建人">
+              <Input placeholder="创建人姓名" />
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
+    </>
   );
 };
 

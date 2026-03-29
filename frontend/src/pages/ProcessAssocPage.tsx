@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, message, Tabs, Badge, Drawer, List, Popconfirm } from 'antd';
-import { PlusOutlined, LinkOutlined, UnlinkOutlined, BellOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, message, Badge, Drawer, List } from 'antd';
+import { PlusOutlined, LinkOutlined, BellOutlined, DeleteOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { api } from '../api/client';
 
@@ -25,6 +25,7 @@ interface NodeSpecRel {
   assocDate: string;
   spec?: ProcessSpec;
   operation?: any;
+  node?: any;
 }
 
 const ProcessAssocPage = () => {
@@ -112,6 +113,9 @@ const ProcessAssocPage = () => {
       message.success('关联成功');
       setRelModalOpen(false);
       relForm.resetFields();
+      if (selectedSpec) {
+        fetchNodeSpecs(selectedSpec.id);
+      }
     } catch (error) {
       message.error('关联失败');
     }
@@ -121,7 +125,9 @@ const ProcessAssocPage = () => {
     try {
       await api.deleteNodeSpecRel(id);
       message.success('解除关联成功');
-      fetchNodeSpecs(selectedSpec?.id || '');
+      if (selectedSpec) {
+        fetchNodeSpecs(selectedSpec.id);
+      }
     } catch (error) {
       message.error('解除关联失败');
     }
@@ -147,7 +153,7 @@ const ProcessAssocPage = () => {
       title: '规程编码',
       dataIndex: 'specCode',
       width: 150,
-      render: (code) => <Tag>{code}</Tag>,
+      render: (code) => <Tag color="blue">{code}</Tag>,
     },
     {
       title: '规程名称',
@@ -188,12 +194,12 @@ const ProcessAssocPage = () => {
       width: 150,
       render: (_, record) => (
         <Space>
-          <Button type="link" icon={<LinkOutlined />} onClick={() => handleViewSpecRels(record)}>
+          <Button type="link" size="small" icon={<LinkOutlined />} onClick={() => handleViewSpecRels(record)}>
             关联节点
           </Button>
-          <Popconfirm title="确认删除?" onConfirm={() => handleDeleteSpec(record.id)}>
-            <Button type="link" danger>删除</Button>
-          </Popconfirm>
+          <Button type="link" size="small" danger icon={<DeleteOutlined />} onClick={() => handleDeleteSpec(record.id)}>
+            删除
+          </Button>
         </Space>
       ),
     },
@@ -227,20 +233,18 @@ const ProcessAssocPage = () => {
       title: '操作',
       width: 100,
       render: (_, record) => (
-        <Popconfirm title="确认解除关联?" onConfirm={() => handleDeleteRel(record.id)}>
-          <Button type="link" danger icon={<UnlinkOutlined />}>
-            解除
-          </Button>
-        </Popconfirm>
+        <Button type="link" size="small" danger onClick={() => handleDeleteRel(record.id)}>
+          解除
+        </Button>
       ),
     },
   ];
 
   return (
-    <Card
-      title="工艺关联"
-      tabBarExtraContent={
-        <Space>
+    <>
+      <header className="header">
+        <div className="header-title">工艺关联</div>
+        <div className="header-actions">
           <Badge count={notifications.filter((n) => !n.isRead).length}>
             <Button icon={<BellOutlined />} onClick={() => setNotificationsOpen(true)}>
               通知
@@ -249,17 +253,17 @@ const ProcessAssocPage = () => {
           <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>
             新建规程
           </Button>
-        </Space>
-      }
-    >
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        items={[
-          {
-            key: 'specs',
-            label: '工艺规程',
-            children: (
+        </div>
+      </header>
+      <div className="content">
+        <div className="page-header">
+          <h2 className="page-title">工艺关联</h2>
+          <p className="page-desc">管理工艺规程与 BOM 节点的关联关系</p>
+        </div>
+
+        <div className="card">
+          <div className="card-body">
+            {activeTab === 'specs' ? (
               <Table
                 columns={specColumns}
                 dataSource={specs}
@@ -267,21 +271,19 @@ const ProcessAssocPage = () => {
                 loading={loading}
                 pagination={{ pageSize: 10 }}
               />
-            ),
-          },
-          {
-            key: 'rels',
-            label: selectedSpec ? `关联节点 - ${selectedSpec.specCode}` : '关联节点',
-            children: selectedSpec ? (
+            ) : (
               <>
                 <div style={{ marginBottom: 16 }}>
-                  <Button
-                    type="primary"
-                    icon={<LinkOutlined />}
-                    onClick={() => setRelModalOpen(true)}
-                  >
+                  <Button type="primary" icon={<LinkOutlined />} onClick={() => setRelModalOpen(true)}>
                     添加关联
                   </Button>
+                  <Button style={{ marginLeft: 8 }} onClick={() => setActiveTab('specs')}>
+                    返回规程列表
+                  </Button>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <Tag color="blue">{selectedSpec?.specCode}</Tag>
+                  <span>{selectedSpec?.specName}</span>
                 </div>
                 <Table
                   columns={relColumns}
@@ -291,109 +293,105 @@ const ProcessAssocPage = () => {
                   pagination={{ pageSize: 10 }}
                 />
               </>
-            ) : (
-              <div style={{ textAlign: 'center', color: '#999', padding: 40 }}>
-                请先选择一个工艺规程查看关联节点
-              </div>
-            ),
-          },
-        ]}
-      />
+            )}
+          </div>
+        </div>
 
-      <Modal
-        title="新建工艺规程"
-        open={createModalOpen}
-        onCancel={() => {
-          setCreateModalOpen(false);
-          form.resetFields();
-        }}
-        onOk={() => form.submit()}
-      >
-        <Form form={form} layout="vertical" onFinish={handleCreateSpec}>
-          <Form.Item name="specCode" label="规程编码" rules={[{ required: true }]}>
-            <Input placeholder="如 SPEC-MC-001" />
-          </Form.Item>
-          <Form.Item name="specName" label="规程名称" rules={[{ required: true }]}>
-            <Input placeholder="如 机加工艺规程" />
-          </Form.Item>
-          <Form.Item name="specType" label="规程类型" rules={[{ required: true }]}>
-            <Select>
-              <Select.Option value="Machining">机械加工</Select.Option>
-              <Select.Option value="Assembly">装配</Select.Option>
-              <Select.Option value="HeatTreat">热处理</Select.Option>
-              <Select.Option value="Surface">表面处理</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="materialCode" label="适用物料编码">
-            <Input placeholder="留空表示通用" />
-          </Form.Item>
-        </Form>
-      </Modal>
+        <Modal
+          title="新建工艺规程"
+          open={createModalOpen}
+          onCancel={() => {
+            setCreateModalOpen(false);
+            form.resetFields();
+          }}
+          onOk={() => form.submit()}
+        >
+          <Form form={form} layout="vertical" onFinish={handleCreateSpec}>
+            <Form.Item name="specCode" label="规程编码" rules={[{ required: true }]}>
+              <Input placeholder="如 SPEC-MC-001" />
+            </Form.Item>
+            <Form.Item name="specName" label="规程名称" rules={[{ required: true }]}>
+              <Input placeholder="如 机加工艺规程" />
+            </Form.Item>
+            <Form.Item name="specType" label="规程类型" rules={[{ required: true }]}>
+              <Select>
+                <Select.Option value="Machining">机械加工</Select.Option>
+                <Select.Option value="Assembly">装配</Select.Option>
+                <Select.Option value="HeatTreat">热处理</Select.Option>
+                <Select.Option value="Surface">表面处理</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="materialCode" label="适用物料编码">
+              <Input placeholder="留空表示通用" />
+            </Form.Item>
+          </Form>
+        </Modal>
 
-      <Modal
-        title={`关联节点到 ${selectedSpec?.specCode}`}
-        open={relModalOpen}
-        onCancel={() => {
-          setRelModalOpen(false);
-          relForm.resetFields();
-        }}
-        onOk={() => relForm.submit()}
-      >
-        <Form form={relForm} layout="vertical" onFinish={handleCreateRel}>
-          <Form.Item name="bomId" label="选择 BOM" rules={[{ required: true }]}>
-            <Select placeholder="选择 BOM" onChange={async (bomId) => {
-              const res: any = await api.getBomTree(bomId);
-              setNodes(res.data.nodes);
-            }}>
-              {boms.map((b) => (
-                <Select.Option key={b.id} value={b.id}>{b.bomCode} - {b.bomName}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="nodeId" label="选择节点" rules={[{ required: true }]}>
-            <Select placeholder="选择 BOM 节点">
-              {nodes.map((n) => (
-                <Select.Option key={n.id} value={n.id}>
-                  {n.materialCode || '无编码'} - {n.materialName || '未命名'}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-          <Form.Item name="assocType" label="关联类型" initialValue="Primary">
-            <Select>
-              <Select.Option value="Primary">主要</Select.Option>
-              <Select.Option value="Alternative">替代</Select.Option>
-              <Select.Option value="Reference">参考</Select.Option>
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
+        <Modal
+          title="关联节点"
+          open={relModalOpen}
+          onCancel={() => {
+            setRelModalOpen(false);
+            relForm.resetFields();
+          }}
+          onOk={() => relForm.submit()}
+        >
+          <Form form={relForm} layout="vertical" onFinish={handleCreateRel}>
+            <Form.Item name="bomId" label="选择 BOM" rules={[{ required: true }]}>
+              <Select placeholder="选择 BOM" onChange={async (bomId) => {
+                const res: any = await api.getBomTree(bomId);
+                setNodes(res.data.nodes);
+              }}>
+                {boms.map((b) => (
+                  <Select.Option key={b.id} value={b.id}>{b.bomCode} - {b.bomName}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item name="nodeId" label="选择节点" rules={[{ required: true }]}>
+              <Select placeholder="选择 BOM 节点">
+                {nodes.map((n) => (
+                  <Select.Option key={n.id} value={n.id}>
+                    {n.materialCode || '无编码'} - {n.materialName || '未命名'}
+                  </Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item name="assocType" label="关联类型" initialValue="Primary">
+              <Select>
+                <Select.Option value="Primary">主要</Select.Option>
+                <Select.Option value="Alternative">替代</Select.Option>
+                <Select.Option value="Reference">参考</Select.Option>
+              </Select>
+            </Form.Item>
+          </Form>
+        </Modal>
 
-      <Drawer
-        title="变更通知"
-        open={notificationsOpen}
-        onClose={() => setNotificationsOpen(false)}
-        width={400}
-      >
-        <List
-          dataSource={notifications}
-          renderItem={(item: any) => (
-            <List.Item>
-              <List.Item.Meta
-                title={
-                  <Space>
-                    <Tag color="orange">{item.changeType}</Tag>
-                    <span>{item.specCode}</span>
-                  </Space>
-                }
-                description={item.changeDesc || '工艺规程已更新'}
-              />
-            </List.Item>
-          )}
-          locale={{ emptyText: '暂无通知' }}
-        />
-      </Drawer>
-    </Card>
+        <Drawer
+          title="变更通知"
+          open={notificationsOpen}
+          onClose={() => setNotificationsOpen(false)}
+          width={400}
+        >
+          <List
+            dataSource={notifications}
+            renderItem={(item: any) => (
+              <List.Item>
+                <List.Item.Meta
+                  title={
+                    <Space>
+                      <Tag color="orange">{item.changeType}</Tag>
+                      <span>{item.specCode}</span>
+                    </Space>
+                  }
+                  description={item.changeDesc || '工艺规程已更新'}
+                />
+              </List.Item>
+            )}
+            locale={{ emptyText: '暂无通知' }}
+          />
+        </Drawer>
+      </div>
+    </>
   );
 };
 

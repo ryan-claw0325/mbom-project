@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, message, Tabs, Alert, Badge } from 'antd';
-import { PlusOutlined, CheckCircleOutlined, PlayCircleOutlined } from '@ant-design/icons';
+import { Card, Table, Button, Space, Tag, Modal, Form, Input, Select, message, Badge } from 'antd';
+import { PlusOutlined, PlayCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import { api } from '../api/client';
 
@@ -154,7 +154,7 @@ const ValidationPage = () => {
       title: '操作',
       width: 100,
       render: (_, record) => (
-        <Button type="link" danger onClick={() => handleDeleteRule(record.id)}>
+        <Button type="link" danger size="small" onClick={() => handleDeleteRule(record.id)}>
           删除
         </Button>
       ),
@@ -205,10 +205,10 @@ const ValidationPage = () => {
   ];
 
   return (
-    <Card
-      title="数据校验"
-      tabBarExtraContent={
-        <Space>
+    <>
+      <header className="header">
+        <div className="header-title">数据校验</div>
+        <div className="header-actions">
           <Select
             placeholder="选择 BOM"
             style={{ width: 300 }}
@@ -229,17 +229,17 @@ const ValidationPage = () => {
           >
             执行校验
           </Button>
-        </Space>
-      }
-    >
-      <Tabs
-        activeKey={activeTab}
-        onChange={setActiveTab}
-        items={[
-          {
-            key: 'rules',
-            label: '校验规则',
-            children: (
+        </div>
+      </header>
+      <div className="content">
+        <div className="page-header">
+          <h2 className="page-title">数据校验</h2>
+          <p className="page-desc">内置 BOM 数据校验规则，自动拦截不合格数据，确保数据质量</p>
+        </div>
+
+        <div className="card">
+          <div className="card-body">
+            {activeTab === 'rules' ? (
               <>
                 <div style={{ marginBottom: 16 }}>
                   <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>
@@ -254,28 +254,39 @@ const ValidationPage = () => {
                   pagination={false}
                 />
               </>
-            ),
-          },
-          {
-            key: 'results',
-            label: '校验结果',
-            children: (
+            ) : (
               <>
                 {validationSummary && (
-                  <Alert
-                    message="校验摘要"
-                    description={
-                      <Space size="large">
-                        <span>总节点: {validationSummary.totalNodes}</span>
-                        <span>通过: <Badge status="success" text={validationSummary.passedNodes} /></span>
-                        <span>错误: <Badge status="error" text={validationSummary.errorCount} /></span>
-                        <span>警告: <Badge status="warning" text={validationSummary.warningCount} /></span>
-                        <span>通过率: {validationSummary.passRate}</span>
-                      </Space>
-                    }
-                    type={validationSummary.errorCount > 0 ? 'error' : 'success'}
-                    style={{ marginBottom: 16 }}
-                  />
+                  <div className="status-items">
+                    <div className="status-item">
+                      <div className="status-icon">📦</div>
+                      <div className="status-info">
+                        <h4>{validationSummary.totalNodes}</h4>
+                        <p>总节点</p>
+                      </div>
+                    </div>
+                    <div className="status-item">
+                      <div className="status-icon">✅</div>
+                      <div className="status-info">
+                        <h4>{validationSummary.passedNodes}</h4>
+                        <p>校验通过</p>
+                      </div>
+                    </div>
+                    <div className="status-item">
+                      <div className="status-icon">❌</div>
+                      <div className="status-info">
+                        <h4>{validationSummary.errorCount}</h4>
+                        <p>校验失败</p>
+                      </div>
+                    </div>
+                    <div className="status-item">
+                      <div className="status-icon">⚠️</div>
+                      <div className="status-info">
+                        <h4>{validationSummary.warningCount}</h4>
+                        <p>警告</p>
+                      </div>
+                    </div>
+                  </div>
                 )}
                 <Table
                   columns={resultColumns}
@@ -285,51 +296,51 @@ const ValidationPage = () => {
                   pagination={{ pageSize: 10 }}
                 />
               </>
-            ),
-          },
-        ]}
-      />
+            )}
+          </div>
+        </div>
 
-      <Modal
-        title="新建校验规则"
-        open={createModalOpen}
-        onCancel={() => {
-          setCreateModalOpen(false);
-          form.resetFields();
-        }}
-        onOk={() => form.submit()}
-      >
-        <Form form={form} layout="vertical" onFinish={handleCreateRule}>
-          <Form.Item name="ruleCode" label="规则编码" rules={[{ required: true }]}>
-            <Input placeholder="如 R007" />
-          </Form.Item>
-          <Form.Item name="ruleName" label="规则名称" rules={[{ required: true }]}>
-            <Input placeholder="如 物料名称非空" />
-          </Form.Item>
-          <Form.Item name="ruleType" label="规则类型" rules={[{ required: true }]}>
-            <Select>
-              <Select.Option value="Mandatory">必填校验</Select.Option>
-              <Select.Option value="Range">范围校验</Select.Option>
-              <Select.Option value="Format">格式校验</Select.Option>
-              <Select.Option value="Relationship">关联校验</Select.Option>
-              <Select.Option value="Custom">自定义</Select.Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="targetField" label="目标字段">
-            <Input placeholder="如 materialCode" />
-          </Form.Item>
-          <Form.Item name="errorMsg" label="错误信息" rules={[{ required: true }]}>
-            <Input.TextArea placeholder="校验失败时显示的错误信息" />
-          </Form.Item>
-          <Form.Item name="severity" label="严重级别" initialValue="Error">
-            <Select>
-              <Select.Option value="Error">错误</Select.Option>
-              <Select.Option value="Warning">警告</Select.Option>
-            </Select>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </Card>
+        <Modal
+          title="新建校验规则"
+          open={createModalOpen}
+          onCancel={() => {
+            setCreateModalOpen(false);
+            form.resetFields();
+          }}
+          onOk={() => form.submit()}
+        >
+          <Form form={form} layout="vertical" onFinish={handleCreateRule}>
+            <Form.Item name="ruleCode" label="规则编码" rules={[{ required: true }]}>
+              <Input placeholder="如 R007" />
+            </Form.Item>
+            <Form.Item name="ruleName" label="规则名称" rules={[{ required: true }]}>
+              <Input placeholder="如 物料名称非空" />
+            </Form.Item>
+            <Form.Item name="ruleType" label="规则类型" rules={[{ required: true }]}>
+              <Select>
+                <Select.Option value="Mandatory">必填校验</Select.Option>
+                <Select.Option value="Range">范围校验</Select.Option>
+                <Select.Option value="Format">格式校验</Select.Option>
+                <Select.Option value="Relationship">关联校验</Select.Option>
+                <Select.Option value="Custom">自定义</Select.Option>
+              </Select>
+            </Form.Item>
+            <Form.Item name="targetField" label="目标字段">
+              <Input placeholder="如 materialCode" />
+            </Form.Item>
+            <Form.Item name="errorMsg" label="错误信息" rules={[{ required: true }]}>
+              <Input.TextArea placeholder="校验失败时显示的错误信息" />
+            </Form.Item>
+            <Form.Item name="severity" label="严重级别" initialValue="Error">
+              <Select>
+                <Select.Option value="Error">错误</Select.Option>
+                <Select.Option value="Warning">警告</Select.Option>
+              </Select>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </div>
+    </>
   );
 };
 

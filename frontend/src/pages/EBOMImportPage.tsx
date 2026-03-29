@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Upload, Button, Steps, Table, Select, Space, Form, Input, message, Alert, Tag } from 'antd';
+import { Card, Upload, Button, Steps, Table, Select, Space, Input, message, Alert, Tag } from 'antd';
 import { UploadOutlined, FileExcelOutlined, CheckCircleOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd/es/upload/interface';
 import { api } from '../api/client';
@@ -44,12 +44,10 @@ const EBOMImportPage = () => {
       setFileId(res.data.fileId);
       message.success('文件上传成功');
 
-      // Auto parse
       const parseRes: any = await api.parseFile({ fileId: res.data.fileId, sourceType });
       setParsedData(parseRes.data);
       setCurrentStep(1);
 
-      // Auto-generate field mappings
       const autoMappings: typeof fieldMappings = [];
       parseRes.data.headers.forEach((header: string) => {
         const matched = standardFields.find((sf) =>
@@ -105,162 +103,173 @@ const EBOMImportPage = () => {
     : [];
 
   return (
-    <Card title="EBOM 导入">
-      <Steps
-        current={currentStep}
-        items={[
-          { title: '上传文件', icon: <UploadOutlined /> },
-          { title: '字段映射', icon: <FileExcelOutlined /> },
-          { title: '完成', icon: <CheckCircleOutlined /> },
-        ]}
-        style={{ marginBottom: 24 }}
-      />
+    <>
+      <header className="header">
+        <div className="header-title">EBOM 导入</div>
+      </header>
+      <div className="content">
+        <div className="page-header">
+          <h2 className="page-title">EBOM 多格式导入</h2>
+          <p className="page-desc">支持 Excel、Word、Teamcenter XML 格式，自动解析并转换为 MBOM</p>
+        </div>
 
-      {currentStep === 0 && (
-        <Space direction="vertical" style={{ width: '100%' }} size="large">
-          <div>
-            <h4>选择文件类型</h4>
-            <Select value={sourceType} onChange={setSourceType} style={{ width: 200 }}>
-              <Option value="excel">Excel (.xlsx/.xls)</Option>
-              <Option value="tc-xml">Teamcenter XML</Option>
-              <Option value="word">Word (.docx)</Option>
-            </Select>
-          </div>
+        <div className="card">
+          <div className="card-body">
+            <div className="steps-container">
+              <Steps
+                current={currentStep}
+                size="small"
+                items={[
+                  { title: '上传文件', icon: <UploadOutlined /> },
+                  { title: '字段映射', icon: <FileExcelOutlined /> },
+                  { title: '完成', icon: <CheckCircleOutlined /> },
+                ]}
+              />
+            </div>
 
-          <div>
-            <h4>上传 EBOM 文件</h4>
-            <Upload.Dragger
-              fileList={fileList}
-              onChange={({ fileList }) => setFileList(fileList)}
-              beforeUpload={handleUpload}
-              maxCount={1}
-              accept={sourceType === 'excel' ? '.xlsx,.xls' : sourceType === 'word' ? '.docx' : '.xml'}
-            >
-              <p className="ant-upload-drag-icon">
-                <UploadOutlined />
-              </p>
-              <p className="ant-upload-text">点击或拖拽文件到此处上传</p>
-              <p className="ant-upload-hint">支持 Excel、Word、Teamcenter XML 格式</p>
-            </Upload.Dragger>
-          </div>
-        </Space>
-      )}
-
-      {currentStep === 1 && parsedData && (
-        <Space direction="vertical" style={{ width: '100%' }} size="large">
-          <Alert
-            message="文件解析成功"
-            description={`共 ${parsedData.totalRows} 行数据，已识别字段: ${parsedData.headers.length}`}
-            type="success"
-            showIcon
-          />
-
-          {parsedData.unmappedFields.length > 0 && (
-            <Alert
-              message="未识别字段"
-              description={
-                <Space>
-                  {parsedData.unmappedFields.map((f) => (
-                    <Tag key={f}>{f}</Tag>
-                  ))}
-                </Space>
-              }
-              type="warning"
-              showIcon
-            />
-          )}
-
-          <div>
-            <h4>数据预览（前 5 行）</h4>
-            <Table
-              columns={previewColumns}
-              dataSource={parsedData.rows.slice(0, 5).map((r, i) => ({ ...r, key: i }))}
-              size="small"
-              scroll={{ x: true }}
-              pagination={false}
-            />
-          </div>
-
-          <div>
-            <h4>字段映射配置</h4>
-            <Space direction="vertical" style={{ width: '100%' }}>
-              {parsedData.headers.map((header, index) => (
-                <Space key={header}>
-                  <span style={{ width: 200 }}>{header}</span>
-                  <ArrowRightOutlined />
-                  <Select
-                    value={fieldMappings.find((m) => m.sourceField === header)?.targetField}
-                    onChange={(value) => {
-                      setFieldMappings((prev) => {
-                        const filtered = prev.filter((m) => m.sourceField !== header);
-                        return [...filtered, { sourceField: header, targetField: value, transform: 'direct' }];
-                      });
-                    }}
-                    style={{ width: 150 }}
-                    placeholder="选择目标字段"
-                    allowClear
-                  >
-                    {standardFields.map((sf) => (
-                      <Option key={sf.value} value={sf.value}>{sf.label}</Option>
-                    ))}
+            {currentStep === 0 && (
+              <Space direction="vertical" style={{ width: '100%' }} size="large">
+                <div className="filter-item">
+                  <label>文件类型:</label>
+                  <Select value={sourceType} onChange={setSourceType} style={{ width: 200 }}>
+                    <Option value="excel">Excel (.xlsx/.xls)</Option>
+                    <Option value="tc-xml">Teamcenter XML</Option>
+                    <Option value="word">Word (.docx)</Option>
                   </Select>
-                </Space>
-              ))}
-            </Space>
-          </div>
+                </div>
 
-          <div>
-            <h4>BOM 名称</h4>
-            <Input
-              value={bomName}
-              onChange={(e) => setBomName(e.target.value)}
-              placeholder="输入新建 BOM 的名称"
-              style={{ width: 400 }}
-            />
-          </div>
-
-          <Space>
-            <Button onClick={() => setCurrentStep(0)}>上一步</Button>
-            <Button type="primary" onClick={handleConvert} loading={converting}>
-              开始转换
-            </Button>
-          </Space>
-        </Space>
-      )}
-
-      {currentStep === 2 && conversionResult && (
-        <Space direction="vertical" style={{ width: '100%' }} size="large">
-          <Alert
-            message="导入成功"
-            description={
-              <Space direction="vertical">
-                <span>BOM 编码: {conversionResult.bomCode}</span>
-                <span>已转换 {conversionResult.itemsConverted} 条数据</span>
+                <Upload.Dragger
+                  fileList={fileList}
+                  onChange={({ fileList }) => setFileList(fileList)}
+                  beforeUpload={handleUpload}
+                  maxCount={1}
+                  accept={sourceType === 'excel' ? '.xlsx,.xls' : sourceType === 'word' ? '.docx' : '.xml'}
+                >
+                  <p className="upload-icon">📁</p>
+                  <p className="upload-text">点击或拖拽文件到此处上传</p>
+                  <p style={{ color: '#999', fontSize: 12 }}>支持 Excel、Word、Teamcenter XML 格式</p>
+                </Upload.Dragger>
               </Space>
-            }
-            type="success"
-            showIcon
-          />
+            )}
 
-          <Space>
-            <Button type="primary" onClick={() => window.location.href = `/boms/${conversionResult.taskId}`}>
-              查看 BOM
-            </Button>
-            <Button onClick={() => {
-              setCurrentStep(0);
-              setFileList([]);
-              setParsedData(null);
-              setFileId(null);
-              setBomName('');
-              setFieldMappings([]);
-              setConversionResult(null);
-            }}>
-              继续导入
-            </Button>
-          </Space>
-        </Space>
-      )}
-    </Card>
+            {currentStep === 1 && parsedData && (
+              <Space direction="vertical" style={{ width: '100%' }} size="large">
+                <Alert
+                  message="文件解析成功"
+                  description={`共 ${parsedData.totalRows} 行数据，已识别字段: ${parsedData.headers.length}`}
+                  type="success"
+                  showIcon
+                />
+
+                {parsedData.unmappedFields.length > 0 && (
+                  <Alert
+                    message="未识别字段"
+                    description={
+                      <Space>
+                        {parsedData.unmappedFields.map((f) => (
+                          <Tag key={f}>{f}</Tag>
+                        ))}
+                      </Space>
+                    }
+                    type="warning"
+                    showIcon
+                  />
+                )}
+
+                <div>
+                  <h4 style={{ marginBottom: 12 }}>数据预览（前 5 行）</h4>
+                  <Table
+                    columns={previewColumns}
+                    dataSource={parsedData.rows.slice(0, 5).map((r, i) => ({ ...r, key: i }))}
+                    size="small"
+                    scroll={{ x: true }}
+                    pagination={false}
+                  />
+                </div>
+
+                <div>
+                  <h4 style={{ marginBottom: 12 }}>字段映射配置</h4>
+                  <Space direction="vertical" style={{ width: '100%' }}>
+                    {parsedData.headers.map((header) => (
+                      <Space key={header}>
+                        <span style={{ width: 200 }}>{header}</span>
+                        <ArrowRightOutlined />
+                        <Select
+                          value={fieldMappings.find((m) => m.sourceField === header)?.targetField}
+                          onChange={(value) => {
+                            setFieldMappings((prev) => {
+                              const filtered = prev.filter((m) => m.sourceField !== header);
+                              return [...filtered, { sourceField: header, targetField: value, transform: 'direct' }];
+                            });
+                          }}
+                          style={{ width: 150 }}
+                          placeholder="选择目标字段"
+                          allowClear
+                        >
+                          {standardFields.map((sf) => (
+                            <Option key={sf.value} value={sf.value}>{sf.label}</Option>
+                          ))}
+                        </Select>
+                      </Space>
+                    ))}
+                  </Space>
+                </div>
+
+                <div>
+                  <h4 style={{ marginBottom: 12 }}>BOM 名称</h4>
+                  <Input
+                    value={bomName}
+                    onChange={(e) => setBomName(e.target.value)}
+                    placeholder="输入新建 BOM 的名称"
+                    style={{ width: 400 }}
+                  />
+                </div>
+
+                <Space>
+                  <Button onClick={() => setCurrentStep(0)}>上一步</Button>
+                  <Button type="primary" onClick={handleConvert} loading={converting}>
+                    开始转换
+                  </Button>
+                </Space>
+              </Space>
+            )}
+
+            {currentStep === 2 && conversionResult && (
+              <Space direction="vertical" style={{ width: '100%' }} size="large">
+                <Alert
+                  message="导入成功"
+                  description={
+                    <Space direction="vertical">
+                      <span>BOM 编码: {conversionResult.bomCode}</span>
+                      <span>已转换 {conversionResult.itemsConverted} 条数据</span>
+                    </Space>
+                  }
+                  type="success"
+                  showIcon
+                />
+
+                <Space>
+                  <Button type="primary" onClick={() => window.location.href = `/boms/${conversionResult.taskId}`}>
+                    查看 BOM
+                  </Button>
+                  <Button onClick={() => {
+                    setCurrentStep(0);
+                    setFileList([]);
+                    setParsedData(null);
+                    setFileId(null);
+                    setBomName('');
+                    setFieldMappings([]);
+                    setConversionResult(null);
+                  }}>
+                    继续导入
+                  </Button>
+                </Space>
+              </Space>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 

@@ -9,7 +9,7 @@ import BOMTreePage from './pages/BOMTreePage';
 import EBOMImportPage from './pages/EBOMImportPage';
 import ValidationPage from './pages/ValidationPage';
 import ProcessAssocPage from './pages/ProcessAssocPage';
-import './index.css';
+import './styles/enterprise.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
@@ -17,7 +17,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       locale={zhCN}
       theme={{
         token: {
-          colorPrimary: '#1890ff',
+          colorPrimary: '#2563eb',
         },
       }}
     >
