@@ -6,9 +6,11 @@ RUN apk add --no-cache openssl libc6-compat openssl-dev
 
 WORKDIR /app
 
-# Copy backend files
+# Copy backend files (including tsconfig.json)
 COPY backend/package*.json ./backend/
+COPY backend/tsconfig.json ./backend/
 COPY backend/prisma ./backend/prisma/
+
 WORKDIR /app/backend
 RUN npm ci && npx prisma generate && npm run build
 
