@@ -22,7 +22,7 @@ COPY frontend/tsconfig*.json ./frontend/
 COPY frontend/index.html ./frontend/
 COPY frontend/src ./frontend/src/
 WORKDIR /app/frontend
-RUN npm ci && npm run build
+RUN npm install && npm run build
 
 # Production stage
 FROM node:22-alpine AS production
