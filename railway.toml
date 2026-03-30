@@ -1,12 +1,11 @@
 [build]
   builder = "NIXPACKS"
-  buildCommand = "cd backend && npm install && npx prisma generate && npm run build"
 
 [[services]]
   name = "mbom-backend"
   port = 8080
   healthCheckPath = "/api/health"
-  startCommand = "cd backend && npm start"
+  startCommand = "cd backend && npm install && npx prisma generate && npm run build && cd backend && npm start"
 
   [services.environment]
     NODE_ENV = "production"
