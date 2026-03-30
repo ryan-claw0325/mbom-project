@@ -6,7 +6,7 @@
   name = "mbom-backend"
   port = 8080
   healthCheckPath = "/api/health"
-  startCommand = "cd backend && npx prisma db push && npm start"
+  startCommand = "cd backend && npm start"
 
   [services.environment]
     NODE_ENV = "production"
