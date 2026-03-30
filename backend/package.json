@@ -1,6 +1,7 @@
 {
   "name": "mbom-backend",
   "version": "1.0.0",
+  "type": "module",
   "description": "MBOM Management Module Backend",
   "main": "dist/app.js",
   "scripts": {

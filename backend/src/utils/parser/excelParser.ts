@@ -19,7 +19,7 @@ export async function parseExcel(filePath: string): Promise<ParsedData> {
     }
 
     // First row is headers
-    const headers = data[0].map(String);
+    const headers = (data[0] as any[]).map((header: any) => String(header));
     
     // Rest are data rows
     const rows = data.slice(1).map(row => {

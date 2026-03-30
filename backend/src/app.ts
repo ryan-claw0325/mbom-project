@@ -27,6 +27,12 @@ app.use(fileUpload({
 // Static files
 app.use('/uploads', express.static(path.join(__dirname, '..', config.upload.uploadDir)));
 
+// Serve frontend static files in production
+if (config.server.env === 'production') {
+  const frontendDistPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
+  app.use(express.static(frontendDistPath));
+}
+
 // API Routes
 app.use('/api/boms', bomRoutes);
 app.use('/api/ebom', ebomRoutes);
@@ -40,6 +46,12 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 // 404 handler
 app.use((req: Request, res: Response) => {
+  // In production, serve index.html for SPA routing (except API routes)
+  if (config.server.env === 'production' && !req.path.startsWith('/api')) {
+    const frontendDistPath = path.join(__dirname, '..', '..', 'frontend', 'dist');
+    return res.sendFile(path.join(frontendDistPath, 'index.html'));
+  }
+
   res.status(404).json({
     success: false,
     code: 'NOT_FOUND',

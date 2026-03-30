@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: mbom-backend
+    env: node
+    region: singapore
+    buildCommand: cd backend && npm install && npx prisma generate && npm run build
+    startCommand: cd backend && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        sync: false  # 从 Render PostgreSQL 获取
+      - key: UPLOAD_DIR
+        value: ./uploads
+      - key: MAX_FILE_SIZE
+        value: 10485760
+
+postgresql:
+  name: mbom-db
+  plan: free
+  region: singapore

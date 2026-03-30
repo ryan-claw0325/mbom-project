@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { prisma } from '../utils/database.js';
-import { ValidationError, FileParseError, BusinessError } from '../utils/errors.js';
+import { ValidationError, FileParseError, BusinessError, NotFoundError } from '../utils/errors.js';
 import { parseExcel } from '../utils/parser/excelParser.js';
 import { parseTCXML } from '../utils/parser/xmlParser.js';
 import path from 'path';

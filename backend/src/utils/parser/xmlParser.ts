@@ -14,7 +14,7 @@ export interface ParsedData {
 export async function parseTCXML(filePath: string): Promise<ParsedData> {
   try {
     const xmlContent = await readFile(filePath, 'utf-8');
-    const result = await parseXml(xmlContent);
+    const result: any = await parseXml(xmlContent);
     
     // Teamcenter XML structure varies, this is a common pattern
     // Adjust based on actual TC BOM export format
